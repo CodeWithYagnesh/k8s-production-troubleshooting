@@ -214,9 +214,9 @@ A `VirtualService` dictates *how* requests to external services are routed. It i
 
 ## 📊 Detailed Egress Diagrams
 
-```markdown
+
 ### 1) Default passthrough — ALLOW_ANY
-```
+
 ```mermaid
 flowchart LR
     subgraph K8S["Kubernetes Cluster"]
@@ -231,9 +231,8 @@ flowchart LR
     APP -->|"allowed, no restriction"| EXT["partner-a.example.com"]
 ```
 
-```
 ### 2A) Cluster-level ServiceEntry — REGISTRY_ONLY
-```
+
 ```mermaid
 flowchart LR
     SE["ServiceEntry (cluster-wide)<br/>hosts:<br/>partner-a.example.com<br/>partner-b.example.com"]
@@ -251,9 +250,9 @@ flowchart LR
     APP -->|"blocked"| D3["partner-c.example.com"]
 ```
 
-```
+
 ### 2B) Namespace-level ServiceEntry — REGISTRY_ONLY
-```
+
 ```mermaid
 flowchart LR
     subgraph K8S["Kubernetes Cluster · REGISTRY_ONLY"]
@@ -270,9 +269,9 @@ flowchart LR
     APP -->|"blocked"| D3["partner-c.example.com"]
 ```
 
-```
+
 ### 2C) ServiceEntry + Sidecar resource — AND logic
-```
+
 ```mermaid
 flowchart LR
     SE["ServiceEntry<br/>hosts:<br/>partner-a.example.com<br/>partner-c.example.com"]
@@ -292,9 +291,9 @@ flowchart LR
     APP -->|"blocked, SE has it, sidecar doesn't"| D3["partner-c.example.com"]
 ```
 
-```
+
 ### 2D) Internal & external domains — Sidecar with pod selector
-```
+
 ```mermaid
 flowchart LR
     SE["ServiceEntry<br/>hosts: payment-gateway.example.com,<br/>static-assets.example.com,<br/>internal-api.example.com,<br/>analytics.example.com,<br/>registry.example.com<br/>port: 443 TLS"]
@@ -303,9 +302,9 @@ flowchart LR
     SE --> SIDECAR --> POD
 ```
 
-```
+
 ### 2E) Internal domains only — default Sidecar (no pod selector)
-```
+
 ```mermaid
 flowchart LR
     SIDECAR["Sidecar (without pod selector)<br/>default sidecar<br/>hosts: *.cluster.local"]
@@ -313,9 +312,9 @@ flowchart LR
     SIDECAR --> POD
 ```
 
-```
+
 ### 2F) External IPs
-```
+
 ```mermaid
 flowchart LR
     SE1["ServiceEntry<br/>hosts: mail.smtps.external<br/>address: 198.51.100.10<br/>port: 993 TCP"]
@@ -327,9 +326,9 @@ flowchart LR
     SIDECAR --> POD
 ```
 
-```
+
 ### 2G) Full strategy — multiple ServiceEntries + Sidecars + Pods
-```
+
 ```mermaid
 flowchart TB
     subgraph SES["ServiceEntries"]
@@ -361,9 +360,9 @@ flowchart TB
     SC2 --> P3
 ```
 
-```
+
 ### 3) Bypass Envoy entirely — excludeOutboundIPRanges (not used in production)
-```
+
 ```mermaid
 flowchart LR
     ANNOT["annotation:<br/>traffic.sidecar.istio.io/excludeOutboundIPRanges:<br/>'203.0.113.99/32'"]
