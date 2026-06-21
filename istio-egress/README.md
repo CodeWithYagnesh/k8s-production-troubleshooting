@@ -212,6 +212,175 @@ A `VirtualService` dictates *how* requests to external services are routed. It i
 - **Pod-Label Routing**: A `ServiceEntry` natively applies globally or per-namespace, but **cannot** restrict access based on the requesting pod's labels. This is why the `Sidecar` resource is strictly required to lock down access at the pod level.
 - **HTTPS & External Authorization**: If you route HTTPS traffic through an Egress Gateway and try to enforce L7 external authorization (like OPA or WAF), it **will not work out-of-the-box**. The gateway only sees encrypted TCP traffic (SNI). To enforce path-based HTTP policies on outbound HTTPS traffic, you must perform **TLS Origination** at the egress gateway so it can inspect the decrypted payload.
 
+## 📊 Detailed Egress Diagrams
+
+```markdown
+### 1) Default passthrough — ALLOW_ANY
+```
+```mermaid
+flowchart LR
+    subgraph K8S["Kubernetes Cluster"]
+        subgraph NS["Namespace"]
+            subgraph POD["Pod"]
+                SC["Sidecar"]
+                APP["Application"]
+                SC --> APP
+            end
+        end
+    end
+    APP -->|"allowed, no restriction"| EXT["partner-a.example.com"]
+```
+
+```
+### 2A) Cluster-level ServiceEntry — REGISTRY_ONLY
+```
+```mermaid
+flowchart LR
+    SE["ServiceEntry (cluster-wide)<br/>hosts:<br/>partner-a.example.com<br/>partner-b.example.com"]
+    subgraph K8S["Kubernetes Cluster · REGISTRY_ONLY"]
+        subgraph NS["Namespace"]
+            subgraph POD["Pod"]
+                SC["Sidecar"]
+                APP["Application"]
+            end
+        end
+    end
+    SE -.registers.-> K8S
+    APP -->|"allowed"| D1["partner-a.example.com"]
+    APP -->|"allowed"| D2["partner-b.example.com"]
+    APP -->|"blocked"| D3["partner-c.example.com"]
+```
+
+```
+### 2B) Namespace-level ServiceEntry — REGISTRY_ONLY
+```
+```mermaid
+flowchart LR
+    subgraph K8S["Kubernetes Cluster · REGISTRY_ONLY"]
+        subgraph NS["Namespace"]
+            SE["ServiceEntry (namespace-scoped)<br/>hosts:<br/>partner-a.example.com<br/>partner-b.example.com"]
+            subgraph POD["Pod"]
+                SC["Sidecar"]
+                APP["Application"]
+            end
+        end
+    end
+    APP -->|"allowed"| D1["partner-a.example.com"]
+    APP -->|"allowed"| D2["partner-b.example.com"]
+    APP -->|"blocked"| D3["partner-c.example.com"]
+```
+
+```
+### 2C) ServiceEntry + Sidecar resource — AND logic
+```
+```mermaid
+flowchart LR
+    SE["ServiceEntry<br/>hosts:<br/>partner-a.example.com<br/>partner-c.example.com"]
+    SIDECAR["Sidecar egress hosts:<br/>*/partner-a.example.com<br/>*/partner-b.example.com<br/>istio-system/*"]
+    subgraph K8S["Kubernetes Cluster · REGISTRY_ONLY"]
+        subgraph NS["Namespace"]
+            subgraph POD["Pod"]
+                SC["Sidecar container"]
+                APP["Application"]
+            end
+        end
+    end
+    SE -.-> K8S
+    SIDECAR -.-> POD
+    APP -->|"allowed, in both lists"| D1["partner-a.example.com"]
+    APP -->|"blocked, sidecar has it, SE doesn't"| D2["partner-b.example.com"]
+    APP -->|"blocked, SE has it, sidecar doesn't"| D3["partner-c.example.com"]
+```
+
+```
+### 2D) Internal & external domains — Sidecar with pod selector
+```
+```mermaid
+flowchart LR
+    SE["ServiceEntry<br/>hosts: payment-gateway.example.com,<br/>static-assets.example.com,<br/>internal-api.example.com,<br/>analytics.example.com,<br/>registry.example.com<br/>port: 443 TLS"]
+    SIDECAR["Sidecar (with pod selector)<br/>hosts: static-assets.example.com,<br/>*.cluster.local"]
+    POD["Pod<br/>reaches: static-assets.example.com,<br/>kubernetes.default.svc"]
+    SE --> SIDECAR --> POD
+```
+
+```
+### 2E) Internal domains only — default Sidecar (no pod selector)
+```
+```mermaid
+flowchart LR
+    SIDECAR["Sidecar (without pod selector)<br/>default sidecar<br/>hosts: *.cluster.local"]
+    POD["Pod<br/>reaches: kubernetes.default.svc"]
+    SIDECAR --> POD
+```
+
+```
+### 2F) External IPs
+```
+```mermaid
+flowchart LR
+    SE1["ServiceEntry<br/>hosts: mail.smtps.external<br/>address: 198.51.100.10<br/>port: 993 TCP"]
+    SE2["ServiceEntry<br/>hosts: data.tcp.external<br/>address: 203.0.113.5, 203.0.113.6<br/>port: 465 TCP"]
+    SIDECAR["Sidecar (with pod selector)<br/>hosts: mail.smtps.external:993,<br/>data.tcp.external:465,<br/>*.cluster.local"]
+    POD["Pod<br/>reaches:<br/>203.0.113.5:465<br/>203.0.113.6:465<br/>198.51.100.10:993"]
+    SE1 --> SIDECAR
+    SE2 --> SIDECAR
+    SIDECAR --> POD
+```
+
+```
+### 2G) Full strategy — multiple ServiceEntries + Sidecars + Pods
+```
+```mermaid
+flowchart TB
+    subgraph SES["ServiceEntries"]
+        SE1["mail.smtps.external<br/>address: 198.51.100.10<br/>port: 993 TCP"]
+        SE2["data.tcp.external<br/>address: 203.0.113.5, 203.0.113.6<br/>port: 465 TCP"]
+        SE3["se-domains-https-443<br/>payment-gateway.example.com<br/>static-assets.example.com<br/>internal-api.example.com<br/>analytics.example.com<br/>registry.example.com<br/>port: 443 TLS"]
+    end
+
+    subgraph SCS["Sidecars"]
+        SC0["default sidecar<br/>no pod selector<br/>hosts: *.cluster.local"]
+        SC1["sc-sales<br/>hosts: mail.smtps.external:993,<br/>data.tcp.external:465,<br/>static-assets.example.com:443,<br/>*.cluster.local"]
+        SC2["sc-print-service<br/>hosts: static-assets.example.com:443,<br/>*.cluster.local"]
+    end
+
+    subgraph PODS["Pods"]
+        P0["Pod: any<br/>kubernetes.default.svc.cluster.local"]
+        P1["Pod: sales-instance-a<br/>203.0.113.5:465, 203.0.113.6:465<br/>198.51.100.10:993<br/>payment-gateway.example.com<br/>static-assets.example.com<br/>kubernetes.default.svc.cluster.local"]
+        P2["Pod: sales-instance-b<br/>same access as sales-instance-a"]
+        P3["Pod: print-service<br/>static-assets.example.com<br/>kubernetes.default.svc.cluster.local"]
+    end
+
+    SE1 --> SC1
+    SE2 --> SC1
+    SE3 --> SC1
+    SE3 --> SC2
+    SC0 --> P0
+    SC1 --> P1
+    SC1 --> P2
+    SC2 --> P3
+```
+
+```
+### 3) Bypass Envoy entirely — excludeOutboundIPRanges (not used in production)
+```
+```mermaid
+flowchart LR
+    ANNOT["annotation:<br/>traffic.sidecar.istio.io/excludeOutboundIPRanges:<br/>'203.0.113.99/32'"]
+    subgraph K8S["Kubernetes Cluster"]
+        subgraph NS["Namespace"]
+            subgraph POD["Pod"]
+                SC["Sidecar container<br/>(bypassed for this IP)"]
+                APP["Application"]
+            end
+        end
+    end
+    ANNOT -.-> POD
+    APP -->|"direct, no Envoy"| IP["203.0.113.99<br/>curl partner-b.example.com"]
+```
+
+IPs use RFC 5737 documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24) — safe placeholders, never routable on the real internet.
+
 ## 📚 References
 
 - [StackOverflow: Does Istio ServiceEntry support routing to different hosts by requesting pod label?](https://stackoverflow.com/questions/69634855/does-istio-serviceentry-support-routing-to-different-hosts-by-requesting-pod-lab)
