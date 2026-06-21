@@ -1,0 +1,35 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: coraza-waf
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  url: oci://ghcr.io/corazawaf/coraza-proxy-wasm:latest
+  phase: AUTHN
+  pluginConfig:
+    directives_map:
+      default:
+        - "SecRuleEngine On"
+        - "SecRequestBodyAccess On"
+        - "SecResponseBodyAccess On"
+        - "Include @owasp_crs/*.conf"
+
+      app1.example.com:
+        - "SecRuleEngine On"
+        - "SecRequestBodyAccess On"
+        - "Include @owasp_crs/*.conf"
+        - "SecRuleUpdateActionById 949110 \"deny,status:403\""
+        - "SecRuleRemoveById 920420"
+
+      app2.example.com:
+        - "SecRuleEngine DetectionOnly"
+        - "SecRequestBodyAccess On"
+        - "Include @owasp_crs/*.conf"
+
+    default_directives: "default"
+    per_authority_directives:
+      app1.example.com: "app1.example.com"
+      app2.example.com: "app2.example.com"
