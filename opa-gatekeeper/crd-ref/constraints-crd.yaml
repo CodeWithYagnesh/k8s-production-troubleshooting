@@ -1,0 +1,71 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: <ConstraintKind>  # e.g., K8sRequiredLabels
+metadata:
+  name: <constraint-name>
+  namespace: <optional>
+  annotations:
+    <key>: <value>
+  labels:
+    <key>: <value>
+  creationTimestamp: <timestamp>
+  deletionGracePeriodSeconds: <integer>
+  deletionTimestamp: <timestamp>
+  finalizers:
+    - <finalizer>
+  generateName: <name-prefix>
+  generation: <integer>
+  managedFields:
+    - manager: <string>
+      operation: <string>
+      apiVersion: <string>
+      time: <timestamp>
+      fieldsType: <string>
+      fieldsV1: <FieldsV1>
+      subresource: <string>
+  ownerReferences:
+    - apiVersion: <string>     # required
+      kind: <string>           # required
+      name: <string>           # required
+      uid: <string>            # required
+      controller: <boolean>
+      blockOwnerDeletion: <boolean>
+  resourceVersion: <string>
+  selfLink: <string>
+  uid: <string>
+
+spec:
+  enforcementAction: <deny|dryrun|warn>  # optional; default is "deny"
+  match:
+    excludedNamespaces:
+      - <namespace>
+    kinds:
+      - apiGroups: [""]              # e.g., ["apps"]
+        kinds: ["Deployment"]        # Kind to apply to
+    labelSelector:
+      matchLabels:
+        <key>: <value>
+      matchExpressions:
+        - key: <string>
+          operator: <In|NotIn|Exists|DoesNotExist>
+          values: [<string>]
+    namespaceSelector:
+      matchLabels:
+        <key>: <value>
+      matchExpressions:
+        - key: <string>
+          operator: <In|NotIn|Exists|DoesNotExist>
+          values: [<string>]
+    namespaces:
+      - <namespace>
+    scope: <"All" | "Cluster" | "Namespaced">
+  parameters:
+    <custom-fields-defined-in-template>
+
+  scopedEnforcementActions:
+    - action: <deny|dryrun|warn>
+      enforcementPoints:
+        - <point>
+      name: <string>
+
+status:
+  <custom-status-fields-added-by-controller>

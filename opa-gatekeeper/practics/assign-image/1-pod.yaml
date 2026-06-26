@@ -1,0 +1,12 @@
+# https://kubernetes.io/docs/concepts/workloads/pods/
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "myngin"
+  namespace: default
+  labels:
+    app: "myngin"
+spec:
+  containers:
+  - name: myngin
+    image: "yagneshjariwala/myngin:latest"

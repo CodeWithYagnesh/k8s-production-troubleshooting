@@ -1,0 +1,42 @@
+# https://kubernetes.io/docs/concepts/workloads/pods/
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-1
+  namespace: test
+  labels:
+    app: pod-1
+    owner: x
+spec:
+  containers:
+  - name: pod-1
+    image: nginx
+    resources:
+      limits:
+        cpu: 200m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+---
+# https://kubernetes.io/docs/concepts/workloads/pods/
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-2
+  namespace: test
+  labels:
+    app: pod-2
+    owner: x
+spec:
+  containers:
+  - name: pod-2
+    image: nginx
+    resources:
+      limits:
+        cpu: 200m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+---

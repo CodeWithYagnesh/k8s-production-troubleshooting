@@ -1,0 +1,17 @@
+apiVersion: mutations.gatekeeper.sh/v1
+kind: ModifySet
+metadata:
+  name: set-svc-port-80
+spec:
+  applyTo:
+    - groups: [""]
+      kinds: ["Service"]
+      versions: ["v1"]
+  location: "spec.ports"
+  parameters:
+    operation: merge
+    values:
+      fromList:
+        - port: 80
+          targetPort: 80
+          name: default

@@ -1,0 +1,93 @@
+apiVersion: <string>
+kind: <string>
+metadata:
+  annotations:
+    <key>: <string>
+  creationTimestamp: <string>
+  deletionGracePeriodSeconds: <integer>
+  deletionTimestamp: <string>
+  finalizers:
+    - <string>
+  generateName: <string>
+  generation: <integer>
+  labels:
+    <key>: <string>
+  managedFields:
+    - apiVersion: <string>
+      fieldsType: <string>
+      fieldsV1: <FieldsV1>
+      manager: <string>
+      operation: <string>
+      subresource: <string>
+      time: <string>
+  name: <string>
+  namespace: <string>
+  ownerReferences:
+    - apiVersion: <string> # required
+      blockOwnerDeletion: <boolean>
+      controller: <boolean>
+      kind: <string> # required
+      name: <string> # required
+      uid: <string> # required
+  resourceVersion: <string>
+  selfLink: <string>
+  uid: <string>
+
+spec:
+  applyTo:
+    - groups:
+        - <string>
+      kinds:
+        - <string>
+      versions:
+        - <string>
+  location: <string>
+  match:
+    excludedNamespaces:
+      - <string>
+    kinds:
+      - apiGroups:
+          - <string>
+        kinds:
+          - <string>
+    labelSelector:
+      matchExpressions:
+        - key: <string> # required
+          operator: <string> # required
+          values:
+            - <string>
+      matchLabels:
+        <key>: <string>
+    name: <string>
+    namespaceSelector:
+      matchExpressions:
+        - key: <string> # required
+          operator: <string> # required
+          values:
+            - <string>
+      matchLabels:
+        <key>: <string>
+    namespaces:
+      - <string>
+    scope: <string> # All, Namespaced, Cluster
+  source: <string> # enum: All, Generated, Original
+  parameters:
+    <key>: <value>
+  assignDomain: <string>
+  assignPath: <string>
+  assignTag: <string>
+  pathTests:
+    - condition: <string> # enum: MustExist, MustNotExist
+      subPath: <string>
+
+status:
+  byPod:
+    - enforced: <boolean>
+      errors:
+        - id: <string>
+          message: <string> # required
+          type: <string>
+          mutatorUID: <string>
+  observedGeneration: <integer>
+  operations:
+    - <string>

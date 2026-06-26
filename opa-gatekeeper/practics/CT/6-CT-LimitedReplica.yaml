@@ -1,0 +1,26 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: limitedreplica
+spec:
+  crd:
+    spec:
+      names:
+        kind: LimitedReplica
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            max:
+              description: Maximum replica which you can create
+              type: integer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package limitedreplica
+        
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          input.review.object.spec.replicas > input.parameters.max
+          msg := sprintf("Deployment has %v replicas, which exceeds the allowed maximum of %v", [input.review.object.spec.replicas, input.parameters.max])
+        }
