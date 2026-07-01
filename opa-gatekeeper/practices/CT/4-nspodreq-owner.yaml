@@ -10,4 +10,3 @@ spec:
         kinds: ["Pod"]
   parameters:
     labels: ["owner"]
-    namespaces: ["test"]

@@ -10,5 +10,6 @@ spec:
         kinds: ["Deployment"]
     namespaces:
       - test
+      - default
   parameters:
     max: 5
