@@ -1,0 +1,70 @@
+wapiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: <constraint-template-name>
+  namespace: <optional>
+  annotations:
+    <key>: <value>
+  labels:
+    <key>: <value>
+  creationTimestamp: <timestamp>
+  deletionGracePeriodSeconds: <integer>
+  deletionTimestamp: <timestamp>
+  finalizers:
+    - <string>
+  generateName: <prefix>
+  generation: <integer>
+  managedFields:
+    - manager: <string>
+      operation: <string>
+      apiVersion: <string>
+      time: <timestamp>
+      fieldsType: <string>
+      fieldsV1: <FieldsV1>
+      subresource: <string>
+  ownerReferences:
+    - apiVersion: <string>        # required
+      kind: <string>              # required
+      name: <string>              # required
+      uid: <string>               # required
+      blockOwnerDeletion: <bool>
+      controller: <bool>
+  resourceVersion: <string>
+  selfLink: <string>
+  uid: <string>
+
+spec:
+  crd:
+    spec:
+      names:
+        kind: <ConstraintKind>
+        shortNames:
+          - <shortname>
+      validation:
+        legacySchema: false
+        openAPIV3Schema:
+          properties:
+            <your-parameters-go-here>
+  targets:
+    - target: <target-name>       # e.g., " admission.k8s.gatekeeper.sh"
+      rego: |
+        package <rego.package>
+
+        violation[{"msg": msg}] {
+          ...
+        }
+      code:
+        - engine: <required>      # e.g., "Rego"
+          source:
+            name: <required>      # e.g., "source.rego"
+          libs:
+            - <lib.rego>
+  status:
+    byPod:
+      - id: <pod-id>
+        errors:
+          - code: <string>
+            location: <string>
+            message: <required>
+    observedGeneration: <integer>
+    created: <boolean>

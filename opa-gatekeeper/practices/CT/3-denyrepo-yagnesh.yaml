@@ -1,0 +1,39 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DenyRepo
+metadata:
+  name: deny-yagneshjariwala
+spec:
+  enforcementAction: dryrun
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces:
+      - "test"
+  parameters:
+    deny:
+      - "yagneshjariwala/"
+# @startuml
+# artifact "ConstraintTemplate" as CT
+
+# frame "k8srequiredlabels" as KRL
+# frame "DenyRepo" as DR
+# frame "allowedImages" as AI
+
+# collections "ns-must-have-gk" as ns
+# collections "repo-is-yagneshjariwala" as riy
+# collections "repo-is-not-yagneshjariwala" as riny
+
+
+# CT --> KRL
+# CT --> DR
+# CT --> AI
+
+# KRL --> ns
+# DR --> riny
+# AI --> riy
+
+
+
+
+# @enduml

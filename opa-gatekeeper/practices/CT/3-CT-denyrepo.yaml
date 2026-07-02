@@ -1,0 +1,48 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: denyrepo
+  annotations:
+    metadata.gatekeeper.sh/title: "Allowed Repositories"
+    metadata.gatekeeper.sh/version: 1.0.2
+    description: >-
+      Requires container images to begin with a string from the specified list.
+      To prevent bypasses, ensure a '/' is added when specifying DockerHub repositories or custom registries.
+      If exact matches or glob-like syntax are preferred, use the denyrepov2 policy.
+spec:
+  crd:
+    spec:
+      names:
+        kind: DenyRepo
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            deny:
+              description: The list of prefixes a container image is allowed to have.
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package denyrepo
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          strings.any_prefix_match(container.image, input.parameters.deny)
+          msg := sprintf("container <%v> has an invalid image repo <%v>, allowed deny are %v", [container.name, container.image, input.parameters.deny])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          strings.any_prefix_match(container.image, input.parameters.deny)
+          msg := sprintf("initContainer <%v> has an invalid image repo <%v>, allowed deny are %v", [container.name, container.image, input.parameters.deny])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.ephemeralContainers[_]
+          strings.any_prefix_match(container.image, input.parameters.deny)
+          msg := sprintf("ephemeralContainer <%v> has an invalid image repo <%v>, allowed deny are %v", [container.name, container.image, input.parameters.deny])
+        }
